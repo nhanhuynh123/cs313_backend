@@ -72,7 +72,7 @@ async def get_courses():
 
 # API để lấy danh sách field
 @app.get("/api/fields", response_model=List[Field])
-async def get_courses():
+async def get_fields():
     fields_df = pl.read_parquet(os.path.join(main_path, "data/field_df.parquet"))
     fields = (
         fields_df.rename({"field_name": "name"})
@@ -87,7 +87,7 @@ async def get_courses():
 
 # API để lấy danh sách giáo viên
 @app.get("/api/teachers", response_model=List[Teacher])
-async def get_courses():
+async def get_teachers():
     teacher_df = pl.read_parquet(os.path.join(main_path, "data/teacher_df.parquet"))
     teacher = (
         teacher_df.rename({"teacher_id": "id"})
@@ -96,6 +96,42 @@ async def get_courses():
 
     return Response(
         content=json.dumps({"data": teacher}, ensure_ascii=False),
+        media_type="application/json; charset=utf-8",
+        status_code=status.HTTP_200_OK
+    )
+
+# API để lấy top 10 khoá học
+class CourseUser(BaseModel):
+    id: str
+    user_count: int
+@app.get("/api/course_user", response_model=List[CourseUser])
+async def get_course_user():
+    course_user_df = pl.read_parquet(os.path.join(main_path, "data/course_user_count.parquet"))
+    course_user = (
+        course_user_df.rename({"course_id": "id", "user_count": "user_count"})
+            .to_dicts()
+    )
+
+    return Response(
+        content=json.dumps({"data": course_user}, ensure_ascii=False),
+        media_type="application/json; charset=utf-8",
+        status_code=status.HTTP_200_OK
+    )
+
+# API để lấy top 10 lĩnh vực có nhiều ngừoi học nhất
+class FieldUser(BaseModel):
+    name: str
+    user_count: int
+@app.get("/api/field_user", response_model=List[FieldUser])
+async def get_field_user():
+    field_user_df = pl.read_parquet(os.path.join(main_path, "data/field_user_count.parquet"))
+    field_user = (
+        field_user_df.rename({"course_field": "name", "user_count": "user_count"})
+            .to_dicts()
+    )
+
+    return Response(
+        content=json.dumps({"data": field_user}, ensure_ascii=False),
         media_type="application/json; charset=utf-8",
         status_code=status.HTTP_200_OK
     )
