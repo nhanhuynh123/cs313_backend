@@ -35,8 +35,10 @@ class Course(BaseModel):
 class Field(BaseModel):
     name: str
 
-
-
+## Default route
+@app.get("/")
+async def root():
+    return {"message": "FastAPI is running on Render!"}
     
 # API để lấy danh sách học sinh
 @app.get("/api/students", response_model=List[Student])
