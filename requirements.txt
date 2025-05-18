@@ -2,3 +2,4 @@ fastapi
 polars
 typing
 pydantic
+uvicorn
