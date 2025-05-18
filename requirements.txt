@@ -1,0 +1,5 @@
+fastapi
+polars
+typing
+pydantic
+json

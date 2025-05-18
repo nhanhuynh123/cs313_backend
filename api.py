@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-import pyarrow.parquet as pq
 import polars as pl
 from typing import Dict, List, Any
 from pydantic import BaseModel
