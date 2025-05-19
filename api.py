@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 import polars as pl
 from typing import Dict, List, Any
@@ -20,7 +20,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+## Default route
+@app.get("/")
+async def root():
+    return {"message": "FastAPI is running on Render!"}
+
 # Mô hình dữ liệu
+class Overall(BaseModel):
+    user_count: int
+    course_count: int
+    teacher_count: int
+    field_count: int
+    school_count: int
+@app.get("/api/overall", response_model=List[Overall])
+async def get_overall():
+    overall_df = pl.read_parquet(os.path.join(main_path, "data/overall.parquet"))
+    overall = (
+        overall_df.rename({"user_count":"user_count", "course_count":"course_count", "school_count":"school_count", "teacher_count":"teacher_count", "field_count":"field_count" })
+            .to_dicts()
+    )
+
+    return Response(
+        content=json.dumps({"data": overall}, ensure_ascii=False),
+        media_type="application/json; charset=utf-8",
+        status_code=status.HTTP_200_OK
+    )
+
+## Mô hình dữ liệu
 class Teacher(BaseModel):
     id: str
 
@@ -35,10 +61,6 @@ class Course(BaseModel):
 class Field(BaseModel):
     name: str
 
-## Default route
-@app.get("/")
-async def root():
-    return {"message": "FastAPI is running on Render!"}
     
 # API để lấy danh sách học sinh
 @app.get("/api/students", response_model=List[Student])
@@ -104,7 +126,7 @@ async def get_teachers():
 class CourseUser(BaseModel):
     id: str
     user_count: int
-@app.get("/api/course_user", response_model=List[CourseUser])
+@app.get("/api/student_count_on_course", response_model=List[CourseUser])
 async def get_course_user():
     course_user_df = pl.read_parquet(os.path.join(main_path, "data/course_user_count.parquet"))
     course_user = (
@@ -122,7 +144,7 @@ async def get_course_user():
 class FieldUser(BaseModel):
     name: str
     user_count: int
-@app.get("/api/field_user", response_model=List[FieldUser])
+@app.get("/api/student_count_on_field", response_model=List[FieldUser])
 async def get_field_user():
     field_user_df = pl.read_parquet(os.path.join(main_path, "data/field_user_count.parquet"))
     field_user = (
@@ -132,6 +154,24 @@ async def get_field_user():
 
     return Response(
         content=json.dumps({"data": field_user}, ensure_ascii=False),
+        media_type="application/json; charset=utf-8",
+        status_code=status.HTTP_200_OK
+    )
+
+# API để lấy user
+@app.get("/api/get_student_by_name", response_model=List[Student])
+async def get_user_by_name(query: str = Query(..., min_length=1)):
+    user_df = pl.read_parquet(os.path.join(main_path, "data/user_df.parquet"))
+
+    filtered = (
+        user_df
+            .filter(pl.col("user_name").str.to_lowercase().str.contains(query.lower()))
+            .rename({"user_id": "id", "user_name": "name"})
+            .to_dicts()
+        )
+    
+    return  Response(
+        content=json.dumps({"data": filtered}, ensure_ascii=False),
         media_type="application/json; charset=utf-8",
         status_code=status.HTTP_200_OK
     )
